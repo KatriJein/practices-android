@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.practices"
+    namespace = "com.example.practicesandroid"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.practices"
+        applicationId = "com.example.practicesandroid"
         minSdk = 28
         targetSdk = 36
         versionCode = 1
@@ -56,4 +56,16 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    implementation(libs.androidx.compose.material.icons)
+
+    // Navigation
+    implementation(libs.bundles.navigation3)
+    implementation(libs.kotlinx.serialization.core)
+
+    // image loading
+    implementation(libs.glide)
+    implementation(libs.glide.compose)
+
+    // DI
+    implementation(libs.bundles.koin)
 }
