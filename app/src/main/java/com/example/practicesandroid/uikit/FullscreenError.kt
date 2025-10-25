@@ -1,0 +1,28 @@
+package com.example.practicesandroid.uikit
+
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import com.example.practicesandroid.drivers.presentation.ui.Dimens
+
+@Composable
+fun FullscreenError(
+    retry: () -> Unit,
+    text: String? = null,
+) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .padding(Dimens.Medium),
+        contentAlignment = Alignment.Center
+    ) {
+        ErrorItem(
+            error = text,
+            onClick = retry,
+        )
+    }
+}
