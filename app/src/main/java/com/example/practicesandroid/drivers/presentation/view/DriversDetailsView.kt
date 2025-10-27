@@ -30,20 +30,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.example.practicesandroid.drivers.presentation.model.Driver
+import com.example.practicesandroid.drivers.presentation.model.DriverDetailsUIModel
 import com.example.practicesandroid.drivers.presentation.model.DriverDetailsViewState
-import com.example.practicesandroid.drivers.presentation.model.Team
 import com.example.practicesandroid.drivers.presentation.ui.CountryCodes
 import com.example.practicesandroid.drivers.presentation.ui.Dimens
 import com.example.practicesandroid.drivers.presentation.ui.DriverImages
 import com.example.practicesandroid.drivers.presentation.ui.TeamColorsRes
 import com.example.practicesandroid.drivers.presentation.ui.TeamLogos
 import com.example.practicesandroid.drivers.presentation.viewModel.DriversDetailsViewModel
+import com.example.practicesandroid.uikit.FullscreenError
+import com.example.practicesandroid.uikit.FullscreenLoading
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 import java.time.LocalDate
@@ -51,61 +53,101 @@ import java.time.Period
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun DriversDetailsView(driverId: String) {
-    val viewModel = koinViewModel<DriversDetailsViewModel>() {
-        parametersOf(driverId)
+fun DriversDetailsView(
+    driverId: String,
+    initialPoints: Int? = null,
+    initialPosition: Int? = null,
+    initialWins: Int? = null
+) {
+    val viewModel = koinViewModel<DriversDetailsViewModel> {
+        parametersOf(driverId, initialPoints, initialPosition, initialWins)
     }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    DriversDetails(state)
+    DriversDetailsScreenContent(
+        state = state.state,
+        onRetryClick = viewModel::onRetryClick,
+    )
 }
 
-@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun DriversDetails(state: DriverDetailsViewState) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-    ) {
-        GlideImage(
-            model = DriverImages.getImageUrl(state.driver?.id),
-            contentDescription = "${state.driver?.name} ${state.driver?.surname}",
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-                .clip(RoundedCornerShape(bottomStart = Dimens.Large, bottomEnd = Dimens.Large)),
-            contentScale = ContentScale.Crop
-        )
+private fun DriversDetailsScreenContent(
+    state: DriverDetailsViewState.State,
+    onRetryClick: () -> Unit = {},
+) {
+    when (state) {
+        is DriverDetailsViewState.State.Loading -> {
+            FullscreenLoading()
+        }
 
-        Column(
-            modifier = Modifier.padding(Dimens.ScreenPadding),
-            verticalArrangement = Arrangement.spacedBy(Dimens.Medium)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "${state.driver?.name} ${state.driver?.surname}",
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "${state.driver?.number}",
-                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                    color = TeamColorsRes.getColor(state.driver?.team?.id)
-                )
-            }
-            DriverStats(state)
-            PersonalInfo(state)
-            TeamInfo(state)
+        is DriverDetailsViewState.State.Error -> {
+            FullscreenError(
+                retry = { onRetryClick() },
+                text = state.message
+            )
+        }
+
+        is DriverDetailsViewState.State.Success -> {
+            DriversDetailsContent(
+                driver = state.driver
+            )
         }
     }
 }
 
 @Composable
-fun DriverStats(state: DriverDetailsViewState) {
+fun DriversDetailsContent(
+    driver: DriverDetailsUIModel,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+    ) {
+        DriverHeader(driver)
+        DriverStats(driver)
+        PersonalInfo(driver)
+        TeamInfo(driver)
+    }
+}
+
+@OptIn(ExperimentalGlideComposeApi::class)
+@Composable
+fun DriverHeader(driver: DriverDetailsUIModel) {
+    GlideImage(
+        model = DriverImages.getImageUrl(driver.id),
+        contentDescription = "${driver.name} ${driver.surname}",
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(bottomStart = Dimens.Large, bottomEnd = Dimens.Large)),
+        contentScale = ContentScale.Crop
+    )
+
+    Column(
+        modifier = Modifier.padding(Dimens.ScreenPadding),
+        verticalArrangement = Arrangement.spacedBy(Dimens.Medium)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "${driver.name} ${driver.surname}",
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = "${driver.number}",
+                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                color = TeamColorsRes.getColor(driver.team?.id ?: "")
+            )
+        }
+    }
+}
+
+@Composable
+fun DriverStats(driver: DriverDetailsUIModel) {
     Surface(
         modifier = Modifier
             .fillMaxWidth(),
@@ -118,16 +160,16 @@ fun DriverStats(state: DriverDetailsViewState) {
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            StatItem(icon = Icons.Default.Star, label = "Очки", value = state.driver?.points)
+            StatItem(icon = Icons.Default.Star, label = "Очки", value = driver.points)
             StatItem(
                 icon = Icons.Default.EmojiEvents,
                 label = "Позиция",
-                value = state.driver?.position
+                value = driver.position
             )
             StatItem(
                 icon = Icons.Default.MilitaryTech,
                 label = "Победы",
-                value = state.driver?.wins
+                value = driver.wins
             )
         }
     }
@@ -135,7 +177,7 @@ fun DriverStats(state: DriverDetailsViewState) {
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun PersonalInfo(state: DriverDetailsViewState) {
+fun PersonalInfo(driver: DriverDetailsUIModel) {
     Surface(
         modifier = Modifier
             .fillMaxWidth(),
@@ -147,7 +189,7 @@ fun PersonalInfo(state: DriverDetailsViewState) {
             verticalArrangement = Arrangement.spacedBy(Dimens.Medium)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                state.driver?.nationality?.let {
+                driver.nationality?.let {
                     Text(
                         text = it,
                         style = MaterialTheme.typography.bodyLarge
@@ -156,10 +198,10 @@ fun PersonalInfo(state: DriverDetailsViewState) {
 
                 Spacer(modifier = Modifier.width(Dimens.Medium))
 
-                val flagUrl = CountryCodes.getFlagUrl(state.driver?.nationality)
+                val flagUrl = CountryCodes.getFlagUrl(driver.nationality)
                 GlideImage(
                     model = flagUrl,
-                    contentDescription = "Флаг ${state.driver?.nationality}",
+                    contentDescription = "Флаг ${driver.nationality}",
                     modifier = Modifier
                         .size(32.dp)
 
@@ -167,18 +209,38 @@ fun PersonalInfo(state: DriverDetailsViewState) {
             }
 
             val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
-            val age = Period.between(state.driver?.birthday, LocalDate.now()).years
+            val age = driver.birthday?.let { birthdayString ->
+                try {
+                    val birthday = LocalDate.parse(birthdayString, formatter)
+                    Period.between(birthday, LocalDate.now()).years
+                } catch (e: Exception) {
+                    null
+                }
+            }
             Text(
-                text = "Дата рождения: ${state.driver?.birthday?.format(formatter)} ($age лет)",
+                text = buildAnnotatedString {
+                    append("Дата рождения: ${driver.birthday}")
+                    age?.let {
+                        append(" (${it} ${getAgeSuffix(it)})")
+                    }
+                },
                 style = MaterialTheme.typography.bodyMedium
             )
         }
     }
 }
 
+private fun getAgeSuffix(age: Int): String {
+    return when {
+        age % 10 == 1 && age % 100 != 11 -> "год"
+        age % 10 in 2..4 && age % 100 !in 12..14 -> "года"
+        else -> "лет"
+    }
+}
+
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun TeamInfo(state: DriverDetailsViewState) {
+fun TeamInfo(driver: DriverDetailsUIModel) {
     Surface(
         modifier = Modifier
             .fillMaxWidth(),
@@ -188,7 +250,7 @@ fun TeamInfo(state: DriverDetailsViewState) {
             modifier = Modifier.padding(Dimens.ScreenPadding),
             verticalArrangement = Arrangement.spacedBy(Dimens.Medium)
         ) {
-            state.driver?.team?.name?.let {
+            driver.team?.name?.let {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Medium)
@@ -196,8 +258,8 @@ fun TeamInfo(state: DriverDetailsViewState) {
             }
 
             GlideImage(
-                model = TeamLogos.getLogo(state.driver?.team?.id),
-                contentDescription = state.driver?.team?.name,
+                model = TeamLogos.getLogo(driver.team?.id),
+                contentDescription = driver.team?.name,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(100.dp),
@@ -205,7 +267,7 @@ fun TeamInfo(state: DriverDetailsViewState) {
             )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                state.driver?.team?.nationality?.let {
+                driver.team?.nationality?.let {
                     Text(
                         text = it,
                         style = MaterialTheme.typography.bodyLarge
@@ -214,17 +276,17 @@ fun TeamInfo(state: DriverDetailsViewState) {
 
                 Spacer(modifier = Modifier.width(Dimens.Medium))
 
-                val flagUrl = CountryCodes.getFlagUrl(state.driver?.team?.nationality)
+                val flagUrl = CountryCodes.getFlagUrl(driver.team?.nationality)
                 GlideImage(
                     model = flagUrl,
-                    contentDescription = "Флаг ${state.driver?.team?.nationality}",
+                    contentDescription = "Флаг ${driver.team?.nationality}",
                     modifier = Modifier
                         .size(32.dp)
 
                 )
             }
             Text(
-                "Дата первого появления: ${state.driver?.team?.year}",
+                "Дата первого появления: ${driver.team?.year}",
                 style = MaterialTheme.typography.bodyLarge
             )
         }
@@ -253,5 +315,6 @@ fun StatItem(icon: ImageVector, label: String, value: Int?) {
         )
     }
 }
+
 
 

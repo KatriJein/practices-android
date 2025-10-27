@@ -22,7 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
-import com.example.practicesandroid.drivers.presentation.MockData
+//import com.example.practicesandroid.drivers.presentation.MockData
 import com.example.practicesandroid.drivers.presentation.view.DriversDetailsView
 import com.example.practicesandroid.drivers.presentation.view.DriversListView
 import com.example.practicesandroid.ui.theme.PracticesAndroidTheme
@@ -45,7 +45,12 @@ data object Drivers : TopLevelRoute {
     override val icon = Icons.Default.SportsMotorsports
 }
 
-data class DriverDetails(val driverId: String) : Route
+data class DriverDetails(
+    val driverId: String,
+    val initialPoints: Int? = null,
+    val initialPosition: Int? = null,
+    val initialWins: Int? = null
+) : Route
 
 @Composable
 fun MainScreen() {
@@ -85,12 +90,15 @@ fun MainScreen() {
                     ContentBlue("Гонки")
                 }
                 entry<Drivers> {
-                    DriversListView { driverId ->
-                        topLevelBackStack.add(DriverDetails(driverId))
-                    }
+                    DriversListView(topLevelBackStack)
                 }
                 entry<DriverDetails> { route ->
-                    DriversDetailsView(driverId = route.driverId)
+                    DriversDetailsView(
+                        driverId = route.driverId,
+                        initialPoints = route.initialPoints,
+                        initialPosition = route.initialPosition,
+                        initialWins = route.initialWins
+                    )
                 }
             }
         )

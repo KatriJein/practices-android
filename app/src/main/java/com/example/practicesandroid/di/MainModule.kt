@@ -1,4 +1,4 @@
-package com.example.practicesandroid.drivers.presentation.di
+package com.example.practicesandroid.di
 
 import com.example.practicesandroid.Drivers
 import com.example.practicesandroid.drivers.presentation.viewModel.DriversDetailsViewModel
@@ -10,16 +10,4 @@ import org.koin.dsl.module
 
 val mainModule = module {
     single { TopLevelBackStack<Route>(Drivers) }
-
-    viewModel { (driverId: String) ->
-        DriversDetailsViewModel(
-            topLevelBackStack = get(),
-            driverId = driverId
-        )
-    }
-    viewModel {
-        DriversViewModel(
-            topLevelBackStack = get()
-        )
-    }
 }

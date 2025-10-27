@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,35 +27,85 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.example.practicesandroid.drivers.presentation.model.Driver
+import com.example.practicesandroid.drivers.presentation.model.DriverUIModel
+import com.example.practicesandroid.drivers.presentation.model.DriversViewState
 import com.example.practicesandroid.drivers.presentation.ui.Dimens
 import com.example.practicesandroid.drivers.presentation.ui.DriverImages
 import com.example.practicesandroid.drivers.presentation.ui.TeamColorsRes
 import com.example.practicesandroid.drivers.presentation.viewModel.DriversViewModel
+import com.example.practicesandroid.navigation.Route
+import com.example.practicesandroid.navigation.TopLevelBackStack
+import com.example.practicesandroid.uikit.FullscreenError
+import com.example.practicesandroid.uikit.FullscreenLoading
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun DriversListView(onDriverClick: (String) -> Unit) {
+fun DriversListView(
+    topLevelBackStack: TopLevelBackStack<Route>,
+) {
     val viewModel = koinViewModel<DriversViewModel>()
-
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+    DriversScreenContent(
+        state = state.state,
+        onDriverClick = viewModel::onDriverClick,
+        onRetryClick = viewModel::onRetryClick,
+    )
+}
+
+@Composable
+private fun DriversScreenContent(
+    state: DriversViewState.State,
+    onDriverClick: (DriverUIModel) -> Unit = {},
+    onRetryClick: () -> Unit = {},
+) {
+    when (state) {
+        is DriversViewState.State.Loading -> {
+            FullscreenLoading()
+        }
+
+        is DriversViewState.State.Error -> {
+            FullscreenError(
+                retry = { onRetryClick() },
+                text = state.error
+            )
+        }
+
+        is DriversViewState.State.Success -> {
+            DriversList(
+                drivers = state.data,
+                onDriverClick = onDriverClick,
+
+            )
+        }
+    }
+}
+
+@Composable
+fun DriversList(
+    drivers: List<DriverUIModel>,
+    onDriverClick: (DriverUIModel) -> Unit,
+) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier,
         contentPadding = PaddingValues(Dimens.Large),
         verticalArrangement = Arrangement.spacedBy(Dimens.Small)
     ) {
-        items(state.drivers ?: emptyList(), key = { it.id }) { driver ->
-            DriversListItem(driver = driver) {
-                onDriverClick(driver.id)
-            }
+        items(
+            items = drivers,
+            key = { it.id ?: "" }
+        ) { driver ->
+            DriversListItem(
+                driver = driver,
+                onClick = { onDriverClick(driver) }
+            )
         }
     }
 }
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun DriversListItem(driver: Driver, onClick: () -> Unit) {
+fun DriversListItem(driver: DriverUIModel, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -94,11 +143,11 @@ fun DriversListItem(driver: Driver, onClick: () -> Unit) {
                     text = driver.number.toString(),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = TeamColorsRes.getColor(driver.team.id)
+                    color = TeamColorsRes.getColor(driver.team?.id ?: "")
                 )
             }
             Text(
-                text = driver.team.name,
+                text = driver.team?.name ?: "",
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -111,8 +160,8 @@ fun DriversListItem(driver: Driver, onClick: () -> Unit) {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    DriversListView({})
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun GreetingPreview() {
+//    DriversListView({})
+//}
