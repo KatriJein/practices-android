@@ -5,10 +5,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation3.runtime.entryProvider
@@ -22,11 +22,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
-//import com.example.practicesandroid.drivers.presentation.MockData
+import com.example.practicesandroid.account.presentation.view.AccountView
 import com.example.practicesandroid.drivers.presentation.view.DriversDetailsView
 import com.example.practicesandroid.drivers.presentation.view.DriversListView
 import com.example.practicesandroid.ui.theme.PracticesAndroidTheme
-import org.koin.compose.koinInject
 import org.koin.java.KoinJavaComponent.inject
 
 interface TopLevelRoute : Route {
@@ -45,6 +44,10 @@ data object Drivers : TopLevelRoute {
     override val icon = Icons.Default.SportsMotorsports
 }
 
+data object Account : TopLevelRoute {
+    override val icon = Icons.Default.Person
+}
+
 data class DriverDetails(
     val driverId: String,
     val initialPoints: Int? = null,
@@ -57,7 +60,7 @@ fun MainScreen() {
     val topLevelBackStack by inject<TopLevelBackStack<Route>>(clazz = TopLevelBackStack::class.java)
     Scaffold(bottomBar = {
         NavigationBar {
-            listOf(Home, Races, Drivers).forEach { route ->
+            listOf(Home, Races, Drivers, Account).forEach { route ->
                 NavigationBarItem(
                     icon = {
                         Icon(
@@ -90,7 +93,10 @@ fun MainScreen() {
                     ContentBlue("Гонки")
                 }
                 entry<Drivers> {
-                    DriversListView(topLevelBackStack)
+                    DriversListView()
+                }
+                entry<Account> {
+                    AccountView()
                 }
                 entry<DriverDetails> { route ->
                     DriversDetailsView(

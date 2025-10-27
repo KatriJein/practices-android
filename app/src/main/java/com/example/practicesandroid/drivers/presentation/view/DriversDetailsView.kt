@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,13 +16,21 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MilitaryTech
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -30,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -39,7 +49,7 @@ import com.bumptech.glide.integration.compose.GlideImage
 import com.example.practicesandroid.drivers.presentation.model.DriverDetailsUIModel
 import com.example.practicesandroid.drivers.presentation.model.DriverDetailsViewState
 import com.example.practicesandroid.drivers.presentation.ui.CountryCodes
-import com.example.practicesandroid.drivers.presentation.ui.Dimens
+import com.example.practicesandroid.uikit.Dimens
 import com.example.practicesandroid.drivers.presentation.ui.DriverImages
 import com.example.practicesandroid.drivers.presentation.ui.TeamColorsRes
 import com.example.practicesandroid.drivers.presentation.ui.TeamLogos
@@ -64,34 +74,58 @@ fun DriversDetailsView(
     }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val isFavorite by viewModel.isFavorite.collectAsStateWithLifecycle()
+
+    val context = LocalContext.current
 
     DriversDetailsScreenContent(
         state = state.state,
+        isFavorite = isFavorite,
         onRetryClick = viewModel::onRetryClick,
+        onFavoriteClick = viewModel::onFavoriteClick,
+        onShareClick = { viewModel.onShareClick(context) },
+        onBackClick = viewModel::onBackClick
     )
 }
 
 @Composable
 private fun DriversDetailsScreenContent(
     state: DriverDetailsViewState.State,
+    isFavorite: Boolean,
     onRetryClick: () -> Unit = {},
+    onFavoriteClick: () -> Unit = {},
+    onShareClick: () -> Unit = {},
+    onBackClick: () -> Unit = {},
 ) {
-    when (state) {
-        is DriverDetailsViewState.State.Loading -> {
-            FullscreenLoading()
-        }
-
-        is DriverDetailsViewState.State.Error -> {
-            FullscreenError(
-                retry = { onRetryClick() },
-                text = state.message
+    Scaffold(
+        topBar = {
+            DriverDetailsTopAppBar(
+                isFavorite = isFavorite,
+                onFavoriteClick = onFavoriteClick,
+                onShareClick = onShareClick,
+                onBackClick = onBackClick
             )
-        }
+        }, contentWindowInsets = WindowInsets(0)
+    ) { paddingValues ->
+        when (state) {
+            is DriverDetailsViewState.State.Loading -> {
+                FullscreenLoading()
+            }
 
-        is DriverDetailsViewState.State.Success -> {
-            DriversDetailsContent(
-                driver = state.driver
-            )
+            is DriverDetailsViewState.State.Error -> {
+                FullscreenError(
+                    retry = { onRetryClick() },
+                    text = state.message,
+                )
+
+            }
+
+            is DriverDetailsViewState.State.Success -> {
+                DriversDetailsContent(
+                    driver = state.driver,
+                    modifier = Modifier.padding(paddingValues)
+                )
+            }
         }
     }
 }
@@ -99,9 +133,10 @@ private fun DriversDetailsScreenContent(
 @Composable
 fun DriversDetailsContent(
     driver: DriverDetailsUIModel,
+    modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
@@ -144,6 +179,58 @@ fun DriverHeader(driver: DriverDetailsUIModel) {
             )
         }
     }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DriverDetailsTopAppBar(
+    isFavorite: Boolean,
+    onFavoriteClick: () -> Unit,
+    onShareClick: () -> Unit,
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    TopAppBar(
+        title = { },
+        navigationIcon = {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Назад"
+                )
+            }
+        },
+        actions = {
+            IconButton(onClick = onShareClick) {
+                Icon(
+                    imageVector = Icons.Default.Share,
+                    contentDescription = "Поделиться"
+                )
+            }
+
+            IconButton(onClick = onFavoriteClick) {
+                Icon(
+                    imageVector = if (isFavorite) {
+                        Icons.Default.Favorite
+                    } else {
+                        Icons.Default.FavoriteBorder
+                    },
+                    contentDescription = if (isFavorite) {
+                        "Удалить из избранного"
+                    } else {
+                        "Добавить в избранное"
+                    },
+                    tint = if (isFavorite) {
+                        Color.Red
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    }
+                )
+            }
+        },
+        modifier = modifier
+    )
 }
 
 @Composable
