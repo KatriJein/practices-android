@@ -12,8 +12,12 @@ import com.example.practicesandroid.navigation.Route
 import com.example.practicesandroid.core.launchLoadingAndError
 import com.example.practicesandroid.navigation.TopLevelBackStack
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 
 private val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
@@ -25,11 +29,49 @@ class DriversViewModel(
     private val mutableState = MutableStateFlow(DriversViewState())
     val state = mutableState.asStateFlow()
 
+    private val _showSortBadge = MutableStateFlow(false)
+    val showSortBadge: StateFlow<Boolean> = _showSortBadge.asStateFlow()
+    private var originalDrivers: List<DriverEntity> = emptyList()
+
+    val sortOrder = interactor.getSortOrderFlow()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
     init {
         loadDrivers()
+        checkBadgeState()
     }
 
     fun onRetryClick() = loadDrivers()
+
+    fun onSortClick() {
+        viewModelScope.launch {
+            interactor.toggleSortOrder()
+            sortCurrentDrivers()
+            checkBadgeState()
+        }
+    }
+
+    private fun checkBadgeState() {
+        viewModelScope.launch {
+            _showSortBadge.value = interactor.shouldShowSortBadge()
+        }
+    }
+
+    private fun sortCurrentDrivers() {
+        viewModelScope.launch {
+            val isAscending = sortOrder.value
+            val sortedDrivers = if (isAscending) {
+                originalDrivers.sortedBy { it.points }
+            } else {
+                originalDrivers.sortedByDescending { it.points }
+            }
+            updateState(DriversViewState.State.Success(mapToUi(sortedDrivers)))
+        }
+    }
 
     fun onDriverClick(driver: DriverUIModel) {
         topLevelBackStack.add(DriverDetails(
@@ -48,8 +90,8 @@ class DriversViewModel(
         ) {
             updateState(DriversViewState.State.Loading)
 
-            val drivers = interactor.getDrivers()
-            updateState(DriversViewState.State.Success(mapToUi(drivers)))
+            originalDrivers = interactor.getDrivers()
+            sortCurrentDrivers()
         }
     }
 

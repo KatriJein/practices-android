@@ -1,4 +1,4 @@
-package com.example.practicesandroid.drivers.presentation.ui
+package com.example.practicesandroid.uikit
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.unit.dp

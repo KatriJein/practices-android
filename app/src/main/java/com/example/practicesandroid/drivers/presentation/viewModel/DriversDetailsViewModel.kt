@@ -1,5 +1,8 @@
 package com.example.practicesandroid.drivers.presentation.viewModel
 
+import android.content.Context
+import android.content.Intent
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.practicesandroid.core.launchLoadingAndError
@@ -13,12 +16,17 @@ import com.example.practicesandroid.drivers.presentation.model.RaceResultUIModel
 import com.example.practicesandroid.drivers.presentation.model.RaceUIModel
 import com.example.practicesandroid.drivers.presentation.model.ResultUIModel
 import com.example.practicesandroid.drivers.presentation.model.Team
+import com.example.practicesandroid.navigation.Route
+import com.example.practicesandroid.navigation.TopLevelBackStack
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 
 class DriversDetailsViewModel(
+    private val topLevelBackStack: TopLevelBackStack<Route>,
     private val interactor: DriversInteractor,
     private val driverId: String,
     private val initialPoints: Int? = null,
@@ -28,14 +36,50 @@ class DriversDetailsViewModel(
     private val mutableState = MutableStateFlow(DriverDetailsViewState())
     val state = mutableState.asStateFlow()
 
+    private val _isFavorite = MutableStateFlow(false)
+    val isFavorite: StateFlow<Boolean> = _isFavorite.asStateFlow()
+
     private val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
     private val raceDateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
 
     init {
         loadDriverDetails()
+        checkIsFavorite()
     }
 
     fun onRetryClick() = loadDriverDetails()
+
+    fun onBackClick() {
+        topLevelBackStack.removeLast()
+    }
+
+    fun onShareClick(context: Context) {
+        val currentState = state.value.state
+        if (currentState is DriverDetailsViewState.State.Success) {
+            shareDriverInfo(context, currentState.driver)
+        }
+    }
+
+    private fun shareDriverInfo(context: Context, driver: DriverDetailsUIModel) {
+        val shareText = buildString {
+            append("Информация о пилоте Формулы 1\n\n")
+            append("Пилот: ${driver.name} ${driver.surname}\n")
+            driver.number?.let { append("Номер: $it\n") }
+            driver.team?.name?.let { append("Команда: $it\n") }
+            driver.points?.let { append("Очки: $it\n") }
+            driver.position?.let { append("Позиция в чемпионате: $it\n") }
+            driver.wins?.let { append("Победы: $it\n") }
+        }
+
+        val shareIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_TEXT, shareText)
+            type = "text/plain"
+        }
+
+        val shareChooser = Intent.createChooser(shareIntent, "Поделиться информацией о пилоте")
+        ContextCompat.startActivity(context, shareChooser, null)
+    }
 
     private fun loadDriverDetails() {
         viewModelScope.launchLoadingAndError(
@@ -119,6 +163,22 @@ class DriversDetailsViewModel(
                     )
                 }
             )
+        }
+    }
+
+    fun onFavoriteClick() {
+        viewModelScope.launch {
+            val currentState = state.value.state
+            if (currentState is DriverDetailsViewState.State.Success) {
+                interactor.toggleFavorite(currentState.driver)
+                checkIsFavorite()
+            }
+        }
+    }
+
+    private fun checkIsFavorite() {
+        viewModelScope.launch {
+            _isFavorite.value = interactor.isFavorite(driverId)
         }
     }
 }

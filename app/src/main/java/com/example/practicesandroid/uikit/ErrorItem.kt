@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.practicesandroid.R
-import com.example.practicesandroid.drivers.presentation.ui.Dimens
 import com.example.practicesandroid.ui.theme.PracticesAndroidTheme
 
 @Composable

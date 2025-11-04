@@ -7,7 +7,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.practicesandroid.drivers.presentation.ui.Dimens
 import com.example.practicesandroid.ui.theme.PracticesAndroidTheme
 
 @Composable
