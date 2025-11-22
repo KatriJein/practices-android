@@ -3,7 +3,7 @@ package com.example.practicesandroid.drivers.presentation.ui
 object DriverImages {
     private val driverImages = mapOf(
         "piastri" to "https://i.pinimg.com/originals/22/55/49/22554991aae568ad7f91bdec337df917.jpg",
-        "norris" to "https://cdn01.justjared.com/wp-content/uploads/headlines/2025/05/lando-dating.jpg",
+        "norris" to "https://i.pinimg.com/736x/c6/4a/a5/c64aa51a8ca6087e0669accbbf09f6da.jpg",
         "max_verstappen" to "https://avatars.mds.yandex.net/i?id=4248a1856ded0268e4f19ab4d8a6ac28_l-4578614-images-thumbs&n=13",
         "russell" to "https://d3cm515ijfiu6w.cloudfront.net/wp-content/uploads/2022/02/23061012/george-russell-mercedes-twitter.jpg",
         "leclerc" to "https://i.pinimg.com/originals/c0/b2/95/c0b295ddfb5bba2fb931232df25f469b.jpg",

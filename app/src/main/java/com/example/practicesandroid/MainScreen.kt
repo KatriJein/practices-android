@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import com.example.practicesandroid.account.presentation.view.AccountView
+import com.example.practicesandroid.account.presentation.view.EditProfileScreen
 import com.example.practicesandroid.drivers.presentation.view.DriversDetailsView
 import com.example.practicesandroid.drivers.presentation.view.DriversListView
 import com.example.practicesandroid.ui.theme.PracticesAndroidTheme
@@ -47,6 +48,8 @@ data object Drivers : TopLevelRoute {
 data object Account : TopLevelRoute {
     override val icon = Icons.Default.Person
 }
+
+data object EditProfile : Route
 
 data class DriverDetails(
     val driverId: String,
@@ -97,6 +100,11 @@ fun MainScreen() {
                 }
                 entry<Account> {
                     AccountView()
+                }
+                entry<EditProfile> {
+                    EditProfileScreen(
+                        onBackClick = { topLevelBackStack.removeLast() }
+                    )
                 }
                 entry<DriverDetails> { route ->
                     DriversDetailsView(
