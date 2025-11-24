@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.regex.Pattern
 
 class EditAccountViewModel(
     private val profileInteractor: ProfileInteractor
@@ -41,7 +42,8 @@ class EditAccountViewModel(
                         photoUri = if (profile.photoUri.isNotEmpty())
                             profile.photoUri.toUri()
                         else
-                            Uri.EMPTY
+                            Uri.EMPTY,
+                        time = profile.time
                     )
                 }
             }
@@ -80,18 +82,31 @@ class EditAccountViewModel(
         mutableState.update { it.copy(showPermissionDeniedDialog = true) }
     }
 
+    fun onTimeChange(time: String) {
+        mutableState.update { it.copy(time = time, timeError = false) }
+    }
+
+    fun setTimeError(hasError: Boolean) {
+        mutableState.update { it.copy(timeError = hasError) }
+    }
+
     fun onSaveProfile(onSuccess: () -> Unit) {
         viewModelScope.launch {
             mutableState.update { it.copy(isLoading = true, error = null) }
 
             try {
                 val currentState = state.value
+                if (currentState.time.isNotEmpty() && !isValidTimeFormat(currentState.time)) {
+                    mutableState.update { it.copy(timeError = true) }
+                    return@launch
+                }
 
                 profileInteractor.saveProfile(
                     ProfileEntity(
                         fullName = currentState.fullName,
                         resumeUrl = currentState.resumeUrl,
-                        photoUri = currentState.photoUri.toString()
+                        photoUri = currentState.photoUri.toString(),
+                        time = currentState.time
                     )
                 )
 
@@ -109,5 +124,10 @@ class EditAccountViewModel(
                 _actions.emit(EditProfileAction.SaveError(e.message ?: "Unknown error"))
             }
         }
+    }
+
+    private fun isValidTimeFormat(time: String): Boolean {
+        val timePattern = Pattern.compile("^([01]\\d|2[0-3]):[0-5]\\d$")
+        return timePattern.matcher(time).matches()
     }
 }

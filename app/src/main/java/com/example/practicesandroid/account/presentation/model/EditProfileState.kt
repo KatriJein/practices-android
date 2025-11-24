@@ -10,7 +10,9 @@ data class EditProfileState(
     val error: String? = null,
     val showImageSourceDialog: Boolean = false,
     val showPermissionDeniedDialog: Boolean = false,
-    val tempCameraUri: Uri? = null
+    val tempCameraUri: Uri? = null,
+    val time: String = "",
+    val timeError: Boolean = false
 )
 
 sealed class EditProfileAction {

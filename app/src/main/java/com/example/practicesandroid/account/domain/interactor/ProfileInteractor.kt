@@ -15,7 +15,8 @@ class ProfileInteractor(
         profileRepository.setProfile(
             fullName = profile.fullName,
             photoUri = profile.photoUri,
-            resumeUrl = profile.resumeUrl
+            resumeUrl = profile.resumeUrl,
+            time = profile.time
         )
     }
 }
