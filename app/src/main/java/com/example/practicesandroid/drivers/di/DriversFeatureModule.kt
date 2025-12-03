@@ -10,12 +10,14 @@ import org.koin.dsl.module
 import retrofit2.Retrofit
 import com.example.practicesandroid.drivers.data.api.DriversApi
 import com.example.practicesandroid.drivers.data.cache.BadgeCacheManager
+import com.example.practicesandroid.drivers.data.repository.FavoriteDriversRepository
 
 val driversFeatureModule = module {
     single { get<Retrofit>().create(DriversApi::class.java) }
 
     factory { DriversResponseToEntityMapper() }
     single { DriversRepository(get(), get(), get())  }
+    single { FavoriteDriversRepository(get()) }
 
     single { DriversInteractor(get(), get(),get()) }
     single { BadgeCacheManager() }

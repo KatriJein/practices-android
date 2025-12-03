@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.core.navigation.TopLevelBackStack
 import com.example.practicesandroid.core.launchLoadingAndError
 import com.example.practicesandroid.drivers.domain.interactor.DriversInteractor
 import com.example.practicesandroid.drivers.domain.model.DriverDetailsEntity
@@ -16,8 +17,7 @@ import com.example.practicesandroid.drivers.presentation.model.RaceResultUIModel
 import com.example.practicesandroid.drivers.presentation.model.RaceUIModel
 import com.example.practicesandroid.drivers.presentation.model.ResultUIModel
 import com.example.practicesandroid.drivers.presentation.model.Team
-import com.example.practicesandroid.navigation.Route
-import com.example.practicesandroid.navigation.TopLevelBackStack
+import com.example.core.navigation.Route
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

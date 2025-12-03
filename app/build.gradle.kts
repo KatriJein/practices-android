@@ -89,6 +89,9 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     implementation(libs.room.ktx)
+
+    implementation(project(":profile"))
+    implementation(project(":core"))
 }
 
 configurations.all {

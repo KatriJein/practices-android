@@ -5,9 +5,9 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
-import com.example.practicesandroid.Drivers
-import com.example.practicesandroid.navigation.Route
-import com.example.practicesandroid.navigation.TopLevelBackStack
+import com.example.core.navigation.Drivers
+import com.example.core.navigation.Route
+import com.example.core.navigation.TopLevelBackStack
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 

@@ -2,61 +2,37 @@ package com.example.practicesandroid
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.SportsMotorsports
+import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.ui.NavDisplay
-import com.example.practicesandroid.navigation.Route
-import com.example.practicesandroid.navigation.TopLevelBackStack
-import androidx.compose.material.icons.filled.SportsMotorsports
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
-import com.example.practicesandroid.account.presentation.view.AccountView
-import com.example.practicesandroid.account.presentation.view.EditProfileScreen
+import androidx.navigation3.ui.NavDisplay
+import com.example.core.navigation.Account
+import com.example.core.navigation.DriverDetails
+import com.example.core.navigation.Drivers
+import com.example.core.navigation.EditProfile
+import com.example.core.navigation.Home
+import com.example.core.navigation.Races
+import com.example.core.navigation.Route
+import com.example.core.navigation.TopLevelBackStack
+import com.example.core.navigation.TopLevelRoute
 import com.example.practicesandroid.drivers.presentation.view.DriversDetailsView
 import com.example.practicesandroid.drivers.presentation.view.DriversListView
 import com.example.practicesandroid.ui.theme.PracticesAndroidTheme
+import com.example.profile.presentation.view.EditProfileScreen
+import com.example.profile.presentation.view.ProfileView
 import org.koin.java.KoinJavaComponent.inject
-
-interface TopLevelRoute : Route {
-    val icon: ImageVector
-}
-
-data object Home : TopLevelRoute {
-    override val icon = Icons.Default.Home
-}
-
-data object Races : TopLevelRoute {
-    override val icon = Icons.Default.DateRange
-}
-
-data object Drivers : TopLevelRoute {
-    override val icon = Icons.Default.SportsMotorsports
-}
-
-data object Account : TopLevelRoute {
-    override val icon = Icons.Default.Person
-}
-
-data object EditProfile : Route
-
-data class DriverDetails(
-    val driverId: String,
-    val initialPoints: Int? = null,
-    val initialPosition: Int? = null,
-    val initialWins: Int? = null
-) : Route
 
 @Composable
 fun MainScreen() {
@@ -99,7 +75,7 @@ fun MainScreen() {
                     DriversListView()
                 }
                 entry<Account> {
-                    AccountView()
+                    ProfileView()
                 }
                 entry<EditProfile> {
                     EditProfileScreen(
