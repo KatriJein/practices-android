@@ -94,7 +94,8 @@ class AccountViewModel(
                 mutableProfileState.value = mutableProfileState.value.copy(
                     fullName = profile.fullName,
                     photoUri = if (profile.photoUri.isNotEmpty()) profile.photoUri.toUri() else Uri.EMPTY,
-                    resumeUrl = profile.resumeUrl
+                    resumeUrl = profile.resumeUrl,
+                    time = profile.time
                 )
             }
         }

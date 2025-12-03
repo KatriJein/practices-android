@@ -1,8 +1,17 @@
 package com.example.practicesandroid.account.presentation.view
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.app.TimePickerDialog
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -19,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -46,11 +56,13 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.example.practicesandroid.account.presentation.receiver.NotificationReceiver
 import com.example.practicesandroid.account.presentation.viewModel.EditAccountViewModel
 import org.koin.androidx.compose.koinViewModel
 import java.io.File
+import java.util.Calendar
 
-
+@SuppressLint("DefaultLocale")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
@@ -59,6 +71,14 @@ fun EditProfileScreen(
     val viewModel: EditAccountViewModel = koinViewModel()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    val calendar = Calendar.getInstance()
+    val timePickerDialog = TimePickerDialog(
+        context, { _, hour, minute ->
+            val formattedTime = String.format("%02d:%02d", hour, minute)
+            viewModel.onTimeChange(formattedTime)
+        }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true
+    )
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -88,19 +108,17 @@ fun EditProfileScreen(
 
     fun openCamera() {
         val tempFile = File.createTempFile(
-            "temp_photo_${System.currentTimeMillis()}",
-            ".jpg",
-            context.cacheDir
+            "temp_photo_${System.currentTimeMillis()}", ".jpg", context.cacheDir
         )
         val tempUri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            tempFile
+            context, "${context.packageName}.fileprovider", tempFile
         )
         viewModel.setTempCameraUri(tempUri)
 
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-            PackageManager.PERMISSION_GRANTED
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
         ) {
             cameraLauncher.launch(tempUri)
         } else {
@@ -110,39 +128,39 @@ fun EditProfileScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Редактирование профиля") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Назад"
-                        )
-                    }
-                },
-                actions = {
-                    if (state.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    } else {
-                        IconButton(
-                            onClick = {
+            TopAppBar(title = { Text("Редактирование профиля") }, navigationIcon = {
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Назад"
+                    )
+                }
+            }, actions = {
+                if (state.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    IconButton(
+                        onClick = {
+                            if (state.time.isNotEmpty() && !isValidTimeFormat(state.time)) {
+                                viewModel.setTimeError(true)
+                            } else {
+                                if (state.time.isNotEmpty()) {
+                                    scheduleNotification(context, state.fullName, state.time)
+                                }
                                 viewModel.onSaveProfile(onBackClick)
-                            },
-                            enabled = state.fullName.isNotEmpty()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Done,
-                                contentDescription = "Сохранить"
-                            )
-                        }
+                            }
+                        }, enabled = state.fullName.isNotEmpty()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Done, contentDescription = "Сохранить"
+                        )
                     }
                 }
-            )
-        }
-    ) { padding ->
+            })
+        }) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -152,8 +170,7 @@ fun EditProfileScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             ProfileImageWithPicker(
-                photoUri = state.photoUri,
-                onPhotoClick = viewModel::onPhotoClick
+                photoUri = state.photoUri, onPhotoClick = viewModel::onPhotoClick
             )
 
             OutlinedTextField(
@@ -173,6 +190,34 @@ fun EditProfileScreen(
                 singleLine = true
             )
 
+            OutlinedTextField(
+                value = state.time,
+                onValueChange = viewModel::onTimeChange,
+                label = { Text("Время любимой пары") },
+                trailingIcon = {
+                    IconButton(onClick = { timePickerDialog.show() }) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = "Выбрать время"
+                        )
+                    }
+                },
+                placeholder = { Text("ЧЧ:ММ") },
+                singleLine = true,
+                isError = state.timeError,
+                supportingText = {
+                    if (state.timeError) {
+                        Text(
+                            "Введите время в формате ЧЧ:ММ (например, 14:30)",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    } else {
+                        Text("Формат: ЧЧ:ММ")
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+
             state.error?.let { error ->
                 Text(
                     text = error,
@@ -190,8 +235,7 @@ fun EditProfileScreen(
                 onCameraClick = {
                     viewModel.dismissImageSourceDialog()
                     openCamera()
-                }
-            )
+                })
 
             PermissionDeniedDialog(
                 showDialog = state.showPermissionDeniedDialog,
@@ -204,8 +248,7 @@ fun EditProfileScreen(
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 private fun ProfileImageWithPicker(
-    photoUri: Uri,
-    onPhotoClick: () -> Unit
+    photoUri: Uri, onPhotoClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -229,10 +272,8 @@ private fun ProfileImageWithPicker(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
-                    color = Color.Black.copy(alpha = 0.3f),
-                    shape = CircleShape
-                ),
-            contentAlignment = Alignment.Center
+                    color = Color.Black.copy(alpha = 0.3f), shape = CircleShape
+                ), contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.Edit,
@@ -250,10 +291,8 @@ private fun ImagePlaceholder() {
         modifier = Modifier
             .fillMaxSize()
             .background(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = CircleShape
-            ),
-        contentAlignment = Alignment.Center
+                color = MaterialTheme.colorScheme.surfaceVariant, shape = CircleShape
+            ), contentAlignment = Alignment.Center
     ) {
         Icon(
             imageVector = Icons.Outlined.Person,
@@ -272,53 +311,95 @@ private fun ImageSourceDialog(
     onCameraClick: () -> Unit
 ) {
     if (showDialog) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text("Выберите источник") },
-            text = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+        AlertDialog(onDismissRequest = onDismiss, title = { Text("Выберите источник") }, text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = onGalleryClick, modifier = Modifier.fillMaxWidth()
                 ) {
-                    Button(
-                        onClick = onGalleryClick,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Галерея")
-                    }
-                    Button(
-                        onClick = onCameraClick,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Камера")
-                    }
+                    Text("Галерея")
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("Отмена")
+                Button(
+                    onClick = onCameraClick, modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Камера")
                 }
             }
-        )
+        }, confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Отмена")
+            }
+        })
     }
 }
 
 @Composable
 private fun PermissionDeniedDialog(
-    showDialog: Boolean,
-    onDismiss: () -> Unit
+    showDialog: Boolean, onDismiss: () -> Unit
 ) {
     if (showDialog) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text("Разрешение отклонено") },
-            text = {
-                Text("Для выбора фото или съемки необходимо предоставить разрешение.")
-            },
-            confirmButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("ОК")
-                }
+        AlertDialog(onDismissRequest = onDismiss, title = { Text("Разрешение отклонено") }, text = {
+            Text("Для выбора фото или съемки необходимо предоставить разрешение.")
+        }, confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("ОК")
             }
-        )
+        })
     }
+}
+
+private fun isValidTimeFormat(time: String): Boolean {
+    val timePattern = Regex("^([01]\\d|2[0-3]):[0-5]\\d$")
+    return timePattern.matches(time)
+}
+
+private fun scheduleNotification(context: Context, name: String, time: String) {
+    val parts = time.split(":")
+    val hour = parts.getOrNull(0)?.toIntOrNull() ?: return
+    val minute = parts.getOrNull(1)?.toIntOrNull() ?: return
+
+    val calendar = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, hour)
+        set(Calendar.MINUTE, minute)
+        set(Calendar.SECOND, 0)
+        if (before(Calendar.getInstance())) {
+            add(Calendar.DAY_OF_MONTH, 1)
+        }
+    }
+
+    val intent = Intent(context, NotificationReceiver::class.java).apply {
+        putExtra("name", name)
+    }
+
+    val pendingIntent = PendingIntent.getBroadcast(
+        context,
+        System.currentTimeMillis().toInt(),
+        intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (!alarmManager.canScheduleExactAlarms()) {
+            val settingsIntent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                data = Uri.parse("package:${context.packageName}")
+            }
+            context.startActivity(settingsIntent)
+            return
+        }
+    }
+
+    alarmManager.setExactAndAllowWhileIdle(
+        AlarmManager.RTC_WAKEUP,
+        calendar.timeInMillis,
+        pendingIntent
+    )
+
+    Toast.makeText(
+        context,
+        "Уведомление установлено на $time",
+        Toast.LENGTH_SHORT
+    ).show()
 }

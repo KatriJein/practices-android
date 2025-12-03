@@ -121,6 +121,7 @@ private fun AccountScreen(
         ProfileHeaderWithEditButton(
             photoUri = profileState.photoUri,
             fullName = profileState.fullName,
+            time = profileState.time,
             onEditClick = onEditProfile
         )
 
@@ -137,6 +138,7 @@ private fun AccountScreen(
 private fun ProfileHeaderWithEditButton(
     photoUri: Uri,
     fullName: String,
+    time: String = "",
     onEditClick: () -> Unit
 ) {
     Box(
@@ -157,6 +159,14 @@ private fun ProfileHeaderWithEditButton(
                 text = fullName.ifEmpty { "Не указано" },
                 style = MaterialTheme.typography.headlineMedium
             )
+
+            if (time.isNotEmpty()) {
+                Text(
+                    text = "Любимая пара: $time",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
         }
 
         IconButton(

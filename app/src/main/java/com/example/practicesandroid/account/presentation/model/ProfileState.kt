@@ -7,5 +7,6 @@ data class ProfileState(
     val photoUri: Uri = Uri.EMPTY,
     val resumeUrl: String = "",
     val isLoadingResume: Boolean = false,
-    val resumeError: String? = null
+    val resumeError: String? = null,
+    val time: String = ""
 )
