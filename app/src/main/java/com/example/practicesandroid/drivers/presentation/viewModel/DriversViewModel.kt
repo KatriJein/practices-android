@@ -2,15 +2,15 @@ package com.example.practicesandroid.drivers.presentation.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.practicesandroid.DriverDetails
+import com.example.core.navigation.DriverDetails
 import com.example.practicesandroid.drivers.domain.interactor.DriversInteractor
 import com.example.practicesandroid.drivers.domain.model.DriverEntity
 import com.example.practicesandroid.drivers.presentation.model.DriverUIModel
 import com.example.practicesandroid.drivers.presentation.model.DriversViewState
 import com.example.practicesandroid.drivers.presentation.model.Team
-import com.example.practicesandroid.navigation.Route
+import com.example.core.navigation.Route
 import com.example.practicesandroid.core.launchLoadingAndError
-import com.example.practicesandroid.navigation.TopLevelBackStack
+import com.example.core.navigation.TopLevelBackStack
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -74,12 +74,14 @@ class DriversViewModel(
     }
 
     fun onDriverClick(driver: DriverUIModel) {
-        topLevelBackStack.add(DriverDetails(
-            driverId = driver.id ?: "",
-            initialPoints = driver.points,
-            initialPosition = driver.position,
-            initialWins = driver.wins
-        ))
+        topLevelBackStack.add(
+            DriverDetails(
+                driverId = driver.id ?: "",
+                initialPoints = driver.points,
+                initialPosition = driver.position,
+                initialWins = driver.wins
+            )
+        )
     }
 
     private fun loadDrivers() {

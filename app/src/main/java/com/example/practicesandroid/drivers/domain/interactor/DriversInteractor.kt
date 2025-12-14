@@ -1,9 +1,9 @@
 package com.example.practicesandroid.drivers.domain.interactor
 
-import com.example.practicesandroid.account.data.repository.FavoriteDriversRepository
 import com.example.practicesandroid.drivers.data.cache.BadgeCacheManager
 import com.example.practicesandroid.drivers.data.entity.FavoriteDriverEntity
 import com.example.practicesandroid.drivers.data.repository.DriversRepository
+import com.example.practicesandroid.drivers.data.repository.FavoriteDriversRepository
 import com.example.practicesandroid.drivers.presentation.model.DriverDetailsUIModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first

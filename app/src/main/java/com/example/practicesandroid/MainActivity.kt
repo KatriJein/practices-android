@@ -33,11 +33,3 @@ fun ContentBlue(text: String) {
             .background(Color.Blue)
     )
 }
-
-//@Preview(showBackground = true)
-//@Composable
-//fun GreetingPreview() {
-//    PracticesAndroidTheme {
-//        Greeting("Android")
-//    }
-//}
