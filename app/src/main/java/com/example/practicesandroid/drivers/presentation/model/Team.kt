@@ -1,6 +1,6 @@
 package com.example.practicesandroid.drivers.presentation.model
 
-import kotlinx.serialization.Serializable
+        import kotlinx.serialization.Serializable
 
 @Serializable
 data class Team(
